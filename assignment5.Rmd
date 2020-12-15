@@ -16,14 +16,17 @@ The data you will be using comes from the Assistments online intelligent tutorin
 
 ## Start by uploading the data
 ```{r}
-D1 <- 
+D1 <- read.csv("Assistments-confidence.csv", header = TRUE)
 
 ```
 
 ## Create a correlation matrix of the relationships between the variables, including correlation coefficients for each pair of variables/features.
 
 ```{r}
+
 #You can install the corrplot package to plot some pretty correlation matrices (sometimes called correlograms)
+
+
 
 library(ggplot2)
 library(GGally)
@@ -38,7 +41,8 @@ ggcorr(D1[,-1], method = c("everything", "pearson")) #ggcorr() doesn't have an e
 ## Create a new data frame with the mean_correct variable removed, we want to keep that variable intact. The other variables will be included in our PCA.
 
 ```{r}
-D2 <- 
+library(dplyr)
+D2 <- select(D1, "prior_prob_count", "prior_percent_correct", "problems_attempted", "mean_hint", "mean_attempt", "mean_confidence" )
 
 ```
 
@@ -73,17 +77,20 @@ plot(pca, type = "lines")
 ```{r}
 #Now, create a data frame of the transformed data from your pca.
 
-D3 <- 
+D3 <- data.frame(pca$x[,1], pca$x[,2], pca$x[,3], pca$x[,4], pca$x[,5], pca$x[,6])
 
 #Attach the variable "mean_correct" from your original data frame to D3.
 
-
+D3_mean_correct  <- data.frame(pca$x[,1], pca$x[,2], pca$x[,3], pca$x[,4], pca$x[,5], pca$x[,6], D1$mean_correct)
 
 #Now re-run your correlation plots between the transformed data and mean_correct. If you had dropped some components would you have lost important infomation about mean_correct?
 
-
+ggpairs(D3_mean_correct, progress = FALSE)
 
 ```
+
+Based on the ggpairs, we can see that pca6 and pca1 has the most correlation with the mean_correct and if I would drop those, I would lost important information but I could remove pca3 and pca5 without loosing much important information as they do not show a meaningful correlation with mean_correct
+
 ## Now print out the loadings for the components you generated:
 
 ```{r}
@@ -102,13 +109,53 @@ biplot(pca)
 
 ```
 # Part III  
-Also in this repository is a data set collected from TC students (tc-program-combos.csv) that shows how many students thought that a TC program was related to andother TC program. Students were shown three program names at a time and were asked which two of the three were most similar. Use PCA to look for components that represent related programs. Explain why you think there are relationships between these programs.
+Also in this repository is a data set collected from TC students (tc-program-combos.csv) that shows how many students thought that a TC program was related to andother TC program. Students were shown three program names at a time and were asked which two of the three were most similar. 
+
 
 ```{r}
+library(dplyr)
+library(ggplot2)
+library(GGally)
+
+D4 <- read.csv("tc-program-combos.csv", header = TRUE)
+
+D5 <- D4
+
+rownames(D5)<-D5$program
+D5 <- select(D5, -program)
+D5 <- D5[order(rownames(D5)),]
+D5 <- D5[,sort(colnames(D5))]
+
+ggpairs(D4, 2:50, progress = FALSE)
+
+ggcorr(D5[,-1], method = c("everything", "pearson"))
+
+pca2 <- prcomp(D5, scale. = TRUE)
+
+pca2$sdev
+pca2$sdev^2
+
+summary(pca2)
+
+pca2$rotation
+
+pca2$x
+
+plot(pca, type = "lines")
+
+loadings2 <- data.frame(abs(pca2$rotation))
+
+plot(pca2, type = "lines")
+
 
 ```
+Use PCA to look for components that represent related programs. Explain why you think there are relationships between these programs.
 
+According to the pca plot and the percentage of the variances, the pc1 has the highest variance among the other five pcs which means it contains most of the data. Also the first six pcs have the most cumulative percentage (~37%) among all the other ones which are 49 pcs in total. 
 
+Based on the rotation information, in PC1 the majors "Adult Education", "Arts Administration", "Bilingual Bicultural Education", and "Change Leadership" have the highest percentage which menas they are correlated to each other based on their numbers. 
+
+In PC2, the majors "Behavior Analyst", "Clinical Psychology", "Communication Science and Disorders" are the most related majors based on the same reasoning for PC1. 
 
 
 
